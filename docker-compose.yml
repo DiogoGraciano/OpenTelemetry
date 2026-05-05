@@ -55,10 +55,9 @@ services:
     container_name: tempo
     restart: unless-stopped
     volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
       - tempo_data:/var/tempo
     command: ["-config.file=/etc/tempo.yaml"]
-    # Tempo usa config embutida na imagem (local-config) para setup simples
-    # Para customizar crie ./tempo/tempo.yaml e monte aqui
     ports:
       - "3200:3200"   # HTTP API
       - "9095:9095"   # gRPC
