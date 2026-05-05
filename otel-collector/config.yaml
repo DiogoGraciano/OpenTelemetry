@@ -1,0 +1,74 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Coleta métricas internas do próprio Collector
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "otel-collector"
+          static_configs:
+            - targets: ["0.0.0.0:8888"]
+
+processors:
+  # Agrupa spans em lotes antes de enviar (reduz overhead de rede)
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+
+  # Adiciona atributos de recurso padrão
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: "production"
+        action: upsert
+
+  # Limita uso de memória do Collector
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 400
+    spike_limit_mib: 100
+
+exporters:
+  # Envia métricas para o Prometheus via remote_write
+  prometheusremotewrite:
+    endpoint: "http://prometheus:9090/api/v1/write"
+    tls:
+      insecure: true
+
+  # Envia logs para o Loki
+  loki:
+    endpoint: "http://loki:3100/loki/api/v1/push"
+    tls:
+      insecure: true
+
+  # Envia traces para o Tempo via OTLP
+  otlp/tempo:
+    endpoint: "http://tempo:4317"
+    tls:
+      insecure: true
+
+  # Debug (desative em produção trocando por noop)
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/tempo, debug]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, batch, resource]
+      exporters: [prometheusremotewrite, debug]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [loki, debug]
