@@ -259,19 +259,17 @@
   "templating": {
     "list": [
       {
-        "current": {},
-        "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(http_server_request_duration_seconds_count, service_name)",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "loki", "uid": "loki" },
+        "definition": "label_values(service_name)",
         "hide": 0,
         "includeAll": true,
+        "allValue": ".+",
         "label": "Service",
         "multi": false,
         "name": "service",
         "options": [],
-        "query": {
-          "query": "label_values(http_server_request_duration_seconds_count, service_name)",
-          "refId": "StandardVariableQuery"
-        },
+        "query": "label_values(service_name)",
         "refresh": 2,
         "regex": "",
         "sort": 1,
