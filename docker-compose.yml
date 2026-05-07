@@ -20,7 +20,7 @@ services:
 
   # ─── Prometheus ─────────────────────────────────────────────────────────────
   prometheus:
-    image: prom/prometheus:v2.52.0
+    image: prom/prometheus:v3.2.1
     container_name: prometheus
     restart: unless-stopped
     volumes:
@@ -30,7 +30,8 @@ services:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"
       - "--storage.tsdb.retention.time=15d"   # ajuste conforme espaço em disco
-      - "--web.enable-remote-write-receiver"   # recebe métricas do Collector
+      - "--web.enable-remote-write-receiver"   # recebe métricas via remote_write
+      - "--web.enable-otlp-receiver"           # recebe métricas via OTLP (/api/v1/otlp/v1/metrics)
     ports:
       - "9090:9090"
     networks:
@@ -43,6 +44,7 @@ services:
     restart: unless-stopped
     volumes:
       - loki_data:/loki
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml
     command: -config.file=/etc/loki/local-config.yaml
     ports:
       - "3100:3100"

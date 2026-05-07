@@ -26,6 +26,9 @@ processors:
       - key: deployment.environment
         value: "production"
         action: upsert
+      - key: deployment.environment.name
+        value: "production"
+        action: upsert
 
   # Limita uso de memória do Collector
   memory_limiter:
@@ -34,19 +37,19 @@ processors:
     spike_limit_mib: 100
 
 exporters:
-  # Envia métricas para o Prometheus via remote_write
-  prometheusremotewrite:
-    endpoint: "http://prometheus:9090/api/v1/write"
+  # Métricas via OTLP/HTTP para Prometheus (mantém resource attributes promovidos a labels)
+  otlphttp/prometheus:
+    endpoint: "http://prometheus:9090/api/v1/otlp"
     tls:
       insecure: true
 
-  # Envia logs para o Loki
-  loki:
-    endpoint: "http://loki:3100/loki/api/v1/push"
+  # Logs via OTLP/HTTP para Loki (mantém resource attributes como labels/structured metadata)
+  otlphttp/loki:
+    endpoint: "http://loki:3100/otlp"
     tls:
       insecure: true
 
-  # Envia traces para o Tempo via OTLP
+  # Traces via OTLP/gRPC para Tempo
   otlp/tempo:
     endpoint: "http://tempo:4317"
     tls:
@@ -66,9 +69,9 @@ service:
     metrics:
       receivers: [otlp, prometheus]
       processors: [memory_limiter, batch, resource]
-      exporters: [prometheusremotewrite, debug]
+      exporters: [otlphttp/prometheus, debug]
 
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [loki, debug]
+      exporters: [otlphttp/loki, debug]
