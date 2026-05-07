@@ -2,7 +2,7 @@
   "__inputs": [],
   "__requires": [],
   "annotations": { "list": [] },
-  "description": "Application metrics, logs and traces via OpenTelemetry",
+  "description": "Application metrics, logs and traces via OpenTelemetry (Laravel / keepsuit)",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -28,7 +28,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_server_request_duration_seconds_count[2m]))",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\"}[2m]))",
           "legendFormat": "req/s",
           "refId": "A"
         }
@@ -55,12 +55,12 @@
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
       "id": 2,
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "justifyMode": "auto" },
-      "title": "Error Rate",
+      "title": "Error Rate (5xx)",
       "type": "stat",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[2m])) / sum(rate(http_server_request_duration_seconds_count[2m])) * 100",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\",http_response_status_code=~\"5..\"}[2m])) / sum(rate(http_server_request_duration_seconds_count{service_name=~\"$service\"}[2m])) * 100",
           "legendFormat": "errors %",
           "refId": "A"
         }
@@ -92,7 +92,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[2m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}[2m])) by (le)) * 1000",
           "legendFormat": "p95",
           "refId": "A"
         }
@@ -111,14 +111,14 @@
       },
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
       "id": 4,
-      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "none", "justifyMode": "auto" },
-      "title": "Active Spans (Collector)",
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background", "graphMode": "area", "justifyMode": "auto" },
+      "title": "Spans Received (Collector)",
       "type": "stat",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "otelcol_processor_batch_batch_send_size_count",
-          "legendFormat": "batches",
+          "expr": "sum(rate(otelcol_receiver_accepted_spans_total[2m]))",
+          "legendFormat": "spans/s",
           "refId": "A"
         }
       ]
@@ -137,7 +137,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (http_route, http_request_method) (rate(http_server_request_duration_seconds_count[2m]))",
+          "expr": "sum by (http_route, http_request_method) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\"}[2m]))",
           "legendFormat": "{{http_request_method}} {{http_route}}",
           "refId": "A"
         }
@@ -157,19 +157,19 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket[2m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.50, sum(rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}[2m])) by (le)) * 1000",
           "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[2m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}[2m])) by (le)) * 1000",
           "legendFormat": "p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket[2m])) by (le)) * 1000",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket{service_name=~\"$service\"}[2m])) by (le)) * 1000",
           "legendFormat": "p99",
           "refId": "C"
         }
@@ -189,7 +189,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count[2m]))",
+          "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count{service_name=~\"$service\"}[2m]))",
           "legendFormat": "{{http_response_status_code}}",
           "refId": "A"
         }
@@ -209,20 +209,20 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "rate(otelcol_receiver_accepted_spans[2m])",
+          "expr": "rate(otelcol_receiver_accepted_spans_total[2m])",
           "legendFormat": "received",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "rate(otelcol_exporter_sent_spans[2m])",
+          "expr": "rate(otelcol_exporter_sent_spans_total[2m])",
           "legendFormat": "exported",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "rate(otelcol_exporter_send_failed_spans[2m])",
-          "legendFormat": "failed",
+          "expr": "rate(otelcol_receiver_refused_spans_total[2m])",
+          "legendFormat": "refused",
           "refId": "C"
         }
       ]
@@ -246,7 +246,7 @@
       "targets": [
         {
           "datasource": { "type": "loki", "uid": "loki" },
-          "expr": "{service_name=~\".+\"} | json",
+          "expr": "{service_name=~\"$service\"} | json",
           "legendFormat": "",
           "refId": "A"
         }
@@ -255,12 +255,34 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["app", "opentelemetry", "otel"],
-  "templating": { "list": [] },
+  "tags": ["app", "opentelemetry", "otel", "laravel"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(http_server_request_duration_seconds_count, service_name)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": false,
+        "name": "service",
+        "options": [],
+        "query": {
+          "query": "label_values(http_server_request_duration_seconds_count, service_name)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "",
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
   "title": "App Observability",
   "uid": "app-observability",
-  "version": 1
+  "version": 2
 }
